@@ -1,0 +1,59 @@
+﻿{
+  "title": "document",
+  "type": "object",
+  "properties": {
+    "number": {
+      "title":  "document_number",
+      "type": "string"
+    },
+    "subjects": {
+      "type": "array",
+      "format": "table",
+      "title": "subjects",
+      "items": {
+        "type": "object",
+        "title": "subject",
+        "properties": {
+          "number": {
+            "type": "string",
+            "enum": [
+              "01",
+              "02",
+              "03",
+              "04",
+              "05",
+              "06"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "paragraphs": {
+            "type": "array",
+            "format": "table",
+            "title": "paragraphs",
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "title": "paragraph",
+              "properties": {
+                "delimiter": {
+                  "type": "string",
+                  "enum": [
+                    "01.",
+                    "02.",
+                    "03.",
+                    "04.",
+                    "05.",
+                    "06.",
+                    "(*1)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

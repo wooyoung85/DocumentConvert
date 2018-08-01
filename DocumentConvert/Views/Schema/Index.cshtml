@@ -1,0 +1,119 @@
+﻿@model DocumentConvert.ViewModels.DocumentViewModel
+
+<link rel='stylesheet' href='~/Content/css/foundation.css'>
+<link rel='stylesheet' href='~/Content/css/font-awesome.css'>
+
+<div class='row'>
+    <div class='medium-12'>
+        <h3>문서 정의</h3>
+    </div>
+    <div class='medium-12'>
+        <div class="filter_board">
+            @Html.LabelFor(m => m.DocumentLanguage)
+            @Html.DropDownListFor(model => model.DocumentLanguage, (IEnumerable<SelectListItem>)ViewBag.DocumentLanguageList)
+
+            @Html.LabelFor(m => m.DocumentType)
+            @Html.DropDownListFor(model => model.DocumentType, (IEnumerable<SelectListItem>)ViewBag.DocumentTypeList)
+            <button id="btnJsonLoad" class="tiny">Json Load</button>
+        </div>
+        <hr />
+        <button id='btnSave' class='btn btn-lg btn-primary'>저장</button>
+        <button id='restore' class='btn btn-lg btn-outline-dark'>초기화</button>
+        <span id='valid_indicator' class='label'></span>
+    </div>
+    <br /><br />
+    <div id='editor_holder' class='medium-12'></div>
+</div>
+
+<script src="/Content/js/jsoneditor.js"></script>
+<script>
+    // Set the default CSS theme and icon library globally
+    JSONEditor.defaults.theme = 'foundation5';
+    JSONEditor.defaults.iconlib = 'fontawesome4';
+
+    $('#btnJsonLoad').on('click', function () {
+        var param = JSON.stringify({ "language": $('#DocumentLanguage').val(), "type": $('#DocumentType').val() });
+
+        $.ajax({
+            url: "@Url.Action("JsonLoad")",
+            type: "POST",
+            data: param,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            error: function (response) {
+                alert(JSON.parse(response.responseText));
+            },
+            success: function (response) {
+                var resultJson = JSON.parse(response);
+                starting_value = resultJson.document_list;
+                $('#editor_holder').empty();
+
+                // Initialize the editor
+                var editor = new JSONEditor(document.getElementById('editor_holder'), {
+                    // Enable fetching schemas via ajax
+                    ajax: true,
+
+                    // The schema for the editor
+                    schema: {
+                        type: "array",
+                        title: "문서 리스트",
+                        format: "tabs",
+                        items: {
+                            title: "document",
+                            headerTemplate: "{{i}} - {{self.number}}",
+                            $ref: "/Content/document/schema/ko_general_info.json"
+                        }
+                    },
+
+                    // Seed the form with a starting value
+                    startval: starting_value
+                });
+
+                // Hook up the submit button to log to the console
+                $('#btnSave').on('click', function () {
+                    var document_list = JSON.stringify({ "document_list": editor.getValue() })
+                    var param = JSON.stringify({ "language": $('#DocumentLanguage').val(), "type": $('#DocumentType').val(), "documents": document_list });
+
+                    $.ajax({
+                        url: "@Url.Action("Update")",
+                        type: "POST",
+                        data: param,
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        error: function (response) {
+                            alert(response.responseText);
+                        },
+                        success: function (response) {
+                            alert("성공적으로 저장 하였습니다.");
+                        }
+                    });
+                });
+
+                // Hook up the Restore to Default button
+                document.getElementById('restore').addEventListener('click', function () {
+                    editor.setValue(starting_value);
+                });
+
+                // Hook up the validation indicator to update its
+                // status whenever the editor changes
+                editor.on('change', function () {
+                    // Get an array of errors from the validator
+                    var errors = editor.validate();
+
+                    var indicator = document.getElementById('valid_indicator');
+
+                    // Not valid
+                    if (errors.length) {
+                        indicator.className = 'label alert';
+                        indicator.textContent = 'not valid';
+                    }
+                        // Valid
+                    else {
+                        indicator.className = 'label success';
+                        indicator.textContent = 'valid';
+                    }
+                });
+            }
+        });
+    });
+</script>
